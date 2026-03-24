@@ -23,12 +23,15 @@ stary_uklad=stary_uklad.split()
 
 
 maks=0
+najlepszy=[]
 for uklad in uklady:
     uklad = list(uklad)
     aktualny=ewaluuj(stary_uklad, uklad)
     if aktualny>maks:
         maks=aktualny
         najlepszy=uklad
+    elif aktualny == maks:
+        najlepszy.append(uklad)
 
 print(f"{najlepszy}:{maks}")
 
