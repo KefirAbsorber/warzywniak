@@ -37,12 +37,13 @@ warzywa_mapping = {
 
 warzywa_demapping = {v: k for k, v in warzywa_mapping.items()}
 
+"""
 def ewaluuj(stary_uklad, nowy_uklad):
     wartosc=0
     for i in range(len(stary_uklad)):
         wartosc += zasady_matrix[stary_uklad[i]][nowy_uklad[i]]
     return wartosc
-
+"""
 warzywa =  ("fasolka koper truskawka ogorek ogorek marchew czosnek pietruszka salata burak cukinia cebula pomidor pomidor puste")
 warzywa = warzywa.split()
 warzywa = [warzywa_mapping[x] for x in warzywa]
@@ -57,19 +58,27 @@ stary_uklad = ( "koper      ogorek  ogorek  puste   czosnek "
 stary_uklad = stary_uklad.split()
 stary_uklad = [warzywa_mapping[x] for x in stary_uklad]
 
+wiersze = [zasady_matrix[t] for t in stary_uklad]
 
 maks=-inf
 najlepszy=[]
 for uklad in uklady:
+    #pusty musi byc pusty
     if uklad[4] != 12:
         continue
-    aktualny=ewaluuj(stary_uklad, uklad)
+    #ewaluuj
+    aktualny = 0
+    for i in range(len(wiersze)):
+        wiersz = wiersze[i]
+        aktualny += wiersz[uklad[i]]
+    #
     if aktualny>maks:
         maks=aktualny
         najlepszy=[uklad]
+    """ 
     elif aktualny == maks:
         najlepszy.append(uklad)
-
+    """
 opcje_demap=[]
 i=0
 for uklad in najlepszy:
