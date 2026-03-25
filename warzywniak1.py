@@ -1,6 +1,7 @@
+from collections import Counter
 from math import inf
 from more_itertools import distinct_permutations
-
+from ortools.sat.python import cp_model
 
 zasady_matrix =[ # stare x nowe
 # fas kop trus ogo mar czo pie sal bur cuk ceb pom pus
@@ -18,6 +19,8 @@ zasady_matrix =[ # stare x nowe
  [0,  0, -10, -1,  0,  0,  0,  0,  0,  0,  0, -1, -100], #pom
  [-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10, 100], #puste
 ]
+
+
 
 warzywa_mapping = {
     "fasolka" : 0,
@@ -37,48 +40,60 @@ warzywa_mapping = {
 
 warzywa_demapping = {v: k for k, v in warzywa_mapping.items()}
 
-"""
-def ewaluuj(stary_uklad, nowy_uklad):
-    wartosc=0
-    for i in range(len(stary_uklad)):
-        wartosc += zasady_matrix[stary_uklad[i]][nowy_uklad[i]]
-    return wartosc
-"""
 warzywa =  ("fasolka koper truskawka ogorek ogorek marchew czosnek pietruszka salata burak cukinia cebula pomidor pomidor puste")
 warzywa = warzywa.split()
 warzywa = [warzywa_mapping[x] for x in warzywa]
-uklady=distinct_permutations(warzywa)
-
-print("Permutacje done")
 
 stary_uklad = ( "koper      ogorek  ogorek  puste   czosnek "
                 "cebula     cukinia burak   fasolka pietruszka "
                 "truskawka  pomidor pomidor salata  salata" )
-
 stary_uklad = stary_uklad.split()
 stary_uklad = [warzywa_mapping[x] for x in stary_uklad]
 
 wiersze = [zasady_matrix[t] for t in stary_uklad]
 
-maks=-inf
-najlepszy=[]
-for uklad in uklady:
-    #pusty musi byc pusty
-    if uklad[4] != 12:
-        continue
-    #ewaluuj
-    aktualny = 0
-    for i in range(len(wiersze)):
-        wiersz = wiersze[i]
-        aktualny += wiersz[uklad[i]]
-    #
-    if aktualny>maks:
-        maks=aktualny
-        najlepszy=[uklad]
-    """ 
-    elif aktualny == maks:
-        najlepszy.append(uklad)
-    """
+uklad = 15*[]
+czesciowe_wyniki = []
+
+rozmiar = len(stary_uklad)
+rodzaje = len(warzywa)-2
+
+model = cp_model.CpModel()
+x= [model.NewIntVar(0, rodzaje-1, f'x[{i}]') for i in range(rozmiar)]
+
+#twarde wymagania
+model.Add(x[4] == warzywa_mapping["puste"])
+model.Add(x[11] == warzywa_mapping["truskawka"])
+
+for i in range(rozmiar): #punktowanie w porownaniu do zeszlego roku
+    wartosc = zasady_matrix[stary_uklad[i]]
+
+    wartosc_pozycji = model.NewIntVar(-1, 1, f'wartosc_pozycji[{i}]')
+    model.AddElement(x[i], wartosc, wartosc_pozycji)
+
+    czesciowe_wyniki.append(wartosc_pozycji)
+
+model.Maximize(sum(czesciowe_wyniki))
+
+#ilosc warzyw zgodna z podana na wejsciu
+ilosci = Counter(warzywa)
+
+for warzywo, ile_ma_byc in ilosci.items(): #poprawna ilosc wystapien warzyw
+    wystapienia = []
+
+    for i in range(rozmiar):
+        czy_sprawdzane = model.NewBoolVar(f"czy_{warzywo}_na_pozycji_{i}")
+
+        model.Add(x[i] == warzywo).OnlyEnforceIf(czy_sprawdzane)
+        model.Add(x[i] != warzywo).OnlyEnforceIf(czy_sprawdzane.Not())
+        wystapienia.append(czy_sprawdzane)
+    #sprawdzamy ilosc wystapien konkretnego warzywa
+    model.Add(sum(wystapienia) == ile_ma_byc)
+
+for i in range(rozmiar):
+    model.Add(sum(uklad[i][veg] for veg in range(13)) == 11)
+
+
 opcje_demap=[]
 i=0
 for uklad in najlepszy:
