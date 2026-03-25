@@ -17,7 +17,7 @@ zasady_matrix =[ # stare x nowe
  [0,  0, -10, -1,  0,  1,  1,  0,  0, -1,  0, -1, -100], #cuk
  [1,  0, -10,  1,  0, -1,  0,  1,  0,  1, -1,  1, -100], #ceb
  [0,  0, -10, -1,  0,  0,  0,  0,  0,  0,  0, -1, -100], #pom
- [-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10, 100], #puste
+ [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, 0], #puste
 ]
 
 
@@ -50,25 +50,24 @@ stary_uklad = ( "koper      ogorek  ogorek  puste   czosnek "
 stary_uklad = stary_uklad.split()
 stary_uklad = [warzywa_mapping[x] for x in stary_uklad]
 
-wiersze = [zasady_matrix[t] for t in stary_uklad]
 
 uklad = 15*[]
 czesciowe_wyniki = []
 
 rozmiar = len(stary_uklad)
-rodzaje = len(warzywa)-2
+rodzaje = len(warzywa_mapping)
 
 model = cp_model.CpModel()
 x= [model.NewIntVar(0, rodzaje-1, f'x[{i}]') for i in range(rozmiar)]
 
 #twarde wymagania
-model.Add(x[4] == warzywa_mapping["puste"])
+model.Add(x[3] == warzywa_mapping["puste"])
 model.Add(x[11] == warzywa_mapping["truskawka"])
 
 for i in range(rozmiar): #punktowanie w porownaniu do zeszlego roku
     wartosc = zasady_matrix[stary_uklad[i]]
 
-    wartosc_pozycji = model.NewIntVar(-1, 1, f'wartosc_pozycji[{i}]')
+    wartosc_pozycji = model.NewIntVar(-100, 100, f'wartosc_pozycji[{i}]')
     model.AddElement(x[i], wartosc, wartosc_pozycji)
 
     czesciowe_wyniki.append(wartosc_pozycji)
@@ -78,7 +77,9 @@ model.Maximize(sum(czesciowe_wyniki))
 #ilosc warzyw zgodna z podana na wejsciu
 ilosci = Counter(warzywa)
 
-for warzywo, ile_ma_byc in ilosci.items(): #poprawna ilosc wystapien warzyw
+
+#poprawna ilosc wystapien warzyw
+for warzywo, ile_ma_byc in ilosci.items():
     wystapienia = []
 
     for i in range(rozmiar):
@@ -90,20 +91,15 @@ for warzywo, ile_ma_byc in ilosci.items(): #poprawna ilosc wystapien warzyw
     #sprawdzamy ilosc wystapien konkretnego warzywa
     model.Add(sum(wystapienia) == ile_ma_byc)
 
-for i in range(rozmiar):
-    model.Add(sum(uklad[i][veg] for veg in range(13)) == 11)
 
+solver = cp_model.CpSolver()
+solver.parameters.max_time_in_seconds = 18000
 
-opcje_demap=[]
-i=0
-for uklad in najlepszy:
-    opcje_demap.append([])
-    for t in uklad:
-        opcje_demap[i].append(warzywa_demapping.get(t))
-    i=i+1
+result = solver.Solve(model)
 
-print("Najwyzsza wartosc:", maks-100)
-for i in opcje_demap:
-    print("Opcja nr:", i)
-    for j in range(4):
-        print(i[j:5*(j+1)])
+if result == cp_model.OPTIMAL: #or result == cp_model.FEASIBLE:
+    solution = [solver.Value(x[i]) for i in range(rozmiar)]
+    print([warzywa_demapping[v] for v in solution])
+    print("Score:", solver.ObjectiveValue())
+else:
+    print("No solution")
