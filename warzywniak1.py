@@ -144,7 +144,7 @@ x= [model.NewIntVar(0, rodzaje-1, f'x[{i}]') for i in range(rozmiar)]
 
 #twarde wymagania
 model.Add(x[3] == warzywa_mapping["puste"])
-model.Add(x[11] == warzywa_mapping["truskawka"])
+model.Add(x[10] == warzywa_mapping["truskawka"])
 
 #punktowanie w porownaniu do zeszlego roku
 for i in range(rozmiar):
