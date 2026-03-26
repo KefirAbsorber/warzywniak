@@ -6,7 +6,7 @@ zasady_matrix =[ # stare x nowe
  [-1, 0, -10,  1,  1,  0,  0,  1,  0,  1,  1,  1, -100], #fas
  [0,  0, -10,  0,  0,  0,  0,  0,  0,  0,  0,  0, -100], #kop
  [0,  0,  10,  0,  0,  0,  0,  0,  0,  0,  0,  0, -100], #tru
- [1,  0, -10, -1,  0,  1,  1,  0,  0, -1,  0, -1, -100], #ogo
+ [1,  0, -10, -10,  0,  1,  1,  0,  0, -1,  0, -1, -100], #ogo
  [-1, 0, -10,  0, -1,  0, -1,  1, -1,  0,  1,  0, -100], #mar
  [0,  0, -10,  1,  0, -1,  0,  0,  0,  1,  0,  1, -100], #czo
  [0,  0, -10,  0, -1,  0, -1,  0, -1,  0,  1,  0, -100], #pie
@@ -26,8 +26,8 @@ def ewaluuj(stary_uklad, nowy_uklad):
     for i in range(len(nowy_uklad)):
         if (i % kolumny) != kolumny - 1:
             wartosc += sasiedzi_matrix[nowy_uklad[i]][nowy_uklad[i + 1]]
-        if i + kolumny < len(nowy_uklad):
-            wartosc += sasiedzi_matrix[nowy_uklad[i]][nowy_uklad[i + kolumny]]
+        """if i + kolumny < len(nowy_uklad):
+            wartosc += sasiedzi_matrix[nowy_uklad[i]][nowy_uklad[i + kolumny]]"""
     return wartosc
 
 def ewaluuj_zesz(stary_uklad, nowy_uklad):
@@ -42,8 +42,8 @@ def ewaluuj_sasiad(nowy_uklad):
     for i in range(len(nowy_uklad)):
         if (i % kolumny) != kolumny - 1:
             wartosc += sasiedzi_matrix[nowy_uklad[i]][nowy_uklad[i + 1]]
-        if i + kolumny < len(nowy_uklad):
-            wartosc += sasiedzi_matrix[nowy_uklad[i]][nowy_uklad[i + kolumny]]
+        """if i + kolumny < len(nowy_uklad):
+            wartosc += sasiedzi_matrix[nowy_uklad[i]][nowy_uklad[i + kolumny]]"""
     return wartosc
 
 warzywa_mapping = {
@@ -134,7 +134,8 @@ def stworz_sasiadow():
 stworz_sasiadow()
 
 sasiedzi_flat = [sasiedzi_matrix[i][j] for i in range(rodzaje) for j in range(rodzaje)]
-"""
+
+""" debug sasiedzi_flat
 for t in range(len(sasiedzi_matrix)):
     print(sasiedzi_matrix[t])
 """
@@ -145,6 +146,7 @@ x= [model.NewIntVar(0, rodzaje-1, f'x[{i}]') for i in range(rozmiar)]
 #twarde wymagania
 model.Add(x[3] == warzywa_mapping["puste"])
 model.Add(x[10] == warzywa_mapping["truskawka"])
+model.Add(x[0] == warzywa_mapping["czosnek"])
 
 #punktowanie w porownaniu do zeszlego roku
 for i in range(rozmiar):
@@ -183,6 +185,7 @@ for pole in range(rozmiar):
         model.AddElement(id_pary, sasiedzi_flat, wartosc_sasiadow)
 
         czesciowe_wyniki.append(wartosc_sasiadow)
+    """ kolumny są oddzielone scieżkami, nie sprawdzyamy sąsiedztwa \" pionowo \"
     if pole + kolumny < rozmiar:
         sasiad = pole + kolumny
         id_pary = model.NewIntVar(0, rodzaje * rodzaje - 1, f'id_pary[{pole}, {sasiad}]')
@@ -191,7 +194,7 @@ for pole in range(rozmiar):
         wartosc_sasiadow = model.NewIntVar(-100, 100, f'wartosc_sasiadow[{pole}, {sasiad}]')
         model.AddElement(id_pary, sasiedzi_flat, wartosc_sasiadow)
 
-        czesciowe_wyniki.append(wartosc_sasiadow)
+        czesciowe_wyniki.append(wartosc_sasiadow)"""
 
 
 model.Maximize(sum(czesciowe_wyniki))
